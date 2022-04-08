@@ -1,0 +1,176 @@
+module density
+ implicit none
+
+  INTEGER, public :: i,j,k,l,den_min,den_max, n_clumps
+  REAL(KIND=SELECTED_REAL_KIND(P=15)),public :: selected_rho
+  real(KIND=SELECTED_REAL_KIND(P=10,R=30)), public :: values
+
+contains
+
+  subroutine densities(den_min,den_max,N)
+    use timestep,  only:time
+    use units,         only:unit_density
+    use part,             only:igas,massoftype,xyzh,rhoh, npart
+    ! use readwrite_dumps_fortran
+    use readwrite_dumps,  only:write_fulldump
+    use io,   only:fatal
+
+
+
+
+    INTEGER :: den_min, den_max, count, density_specifier,density_check,a
+    integer, intent (in) :: N
+    logical :: file_exists
+
+
+
+    character(len=200) ::dumpfile_extension,clump_id, dumpfile_prefix,runid,particle_id, sub_file
+    character(len=500) :: dumpfile, dumpfile_check,dumpfile_check_start
+
+    real(KIND=SELECTED_REAL_KIND(P=2,R=5)) :: chosen, den,rhoi
+    real(KIND=SELECTED_REAL_KIND(P=2,R=5)), dimension(N) :: values
+
+    integer, dimension(20) :: clump_pid
+    integer :: flag, new_clump
+    real, dimension(20) :: clump_dens
+    real,dimension(2000000) :: distance2
+
+    if (n_clumps == 0) then
+      DO i=1, npart
+        rhoi = rhoh(xyzh(4,i),massoftype(igas))
+        if ((rhoi *unit_density) > 1E-10) then
+          clump_dens(1)= rhoi
+          clump_pid(1) = i
+          n_clumps = 1
+          exit
+        endif
+
+      end do
+    endif
+
+
+    if (n_clumps > 0) then
+
+      DO i=1, npart
+        rhoi = rhoh(xyzh(4,i),massoftype(igas))
+
+        if ((rhoi *unit_density) > 1E-10) then
+          DO k=1, n_clumps
+
+            distance2(k) = ((xyzh(1,i) - xyzh(1,clump_pid(k)))**2 &
+              + (xyzh(2,i) - xyzh(2,clump_pid(k)))**2 &
+              + (xyzh(3,i) - xyzh(3,clump_pid(k)))**2)
+          enddo
+
+
+          new_clump=1
+          do k=1,n_clumps
+              if (distance2(k) > 100) then
+                flag=1
+              else
+                flag=0
+              endif
+              new_clump=new_clump*flag
+          enddo
+
+              if (new_clump==1) then
+                n_clumps = n_clumps + 1
+                clump_dens(k)= rhoi
+                clump_pid(k) = i
+              endif
+              do k=1,n_clumps
+              if (rhoi > clump_dens(k) .and. (distance2(k) < 100)) then
+                clump_dens(k)= rhoi
+                clump_pid(k) = i
+
+              end if
+            enddo
+
+
+
+            end if
+
+
+        end DO
+      endif
+
+
+
+
+    DO k=1, n_clumps
+      count=1
+      den = den_min
+      density_check =  int(abs(den_min) * 10)
+
+      DO while (den <= den_max)
+        ! ------------------------------------------------------------------------- !
+        ! Calculate the densities we are outputting files at based on call instance
+        selected_rho = 10.0**den
+        values(count) = selected_rho
+        chosen = values(count)
+        ! ------------------------------------------------------------------------- !
+
+        ! ------------------------------------------------------------------------- !
+        ! Generate the filename based on the density we are outputting at -
+        ! e.g. the snapshot with a maximum density 1e-9.0 is called out_file_00090
+        runid = 'run1'
+        density_specifier = int(abs(log10(selected_rho)) * 10)
+
+
+        write(dumpfile_extension, ' (I5.2)')density_specifier
+        write(clump_id, ' (I5)')k
+        write(particle_id,' (I5)')clump_pid(k)
+
+
+        dumpfile = trim(runid)//"."//trim(adjustl(clump_id))//"."// &
+                   trim(adjustl(dumpfile_extension))//"_"//trim(adjustl(particle_id))
+
+
+        ! dumpfile = trim(runid)//"."//trim(adjustl(clump_id))//"."// &
+        !            trim(adjustl(dumpfile_extension))//"."//trim(adjustl(particle_id))
+
+
+        ! ------------------------------------------------------------------------- !
+
+        ! ------------------------------------------------------------------------- !
+        ! This is the main section of the code - where the dumpfile is created.
+        ! First, check if the file matching the file pattern exists, this lets the
+        ! code know when it is time to move to the next density. If the file does
+        ! not already exist AND the maximum density in this timestep is greater than
+        ! the 'chosen' density, write a full dump to file.
+
+
+        a = index(dumpfile,"_")
+        sub_file = dumpfile(0:a)
+
+        inquire(file=sub_file*,EXIST=file_exists)
+        if (.not. file_exists) then
+          if (((clump_dens(k) * unit_density).GE.(chosen))) then
+             call write_fulldump(time,dumpfile) ! create dumpfile with the correct filename
+             exit
+          endif
+        end if
+
+        ! inquire(file=dumpfile,EXIST=file_exists)
+        ! if (.not. file_exists) then
+        !   if (((clump_dens(k) * unit_density).GE.(chosen))) then
+        !      call write_fulldump(time,dumpfile) ! create dumpfile with the correct filename
+        !
+        !      exit
+        !   endif
+        ! end if
+        ! ------------------------------------------------------------------------- !
+        den = den + 0.2
+        count=count+1
+      END DO
+
+    end do
+
+  END subroutine densities
+
+
+
+
+
+
+end module density
