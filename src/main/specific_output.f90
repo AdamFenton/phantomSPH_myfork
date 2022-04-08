@@ -197,7 +197,7 @@ contains
 
           open(499,file=clump_info_file,position='append')
           write(499,*)  time, char(9), &
-                        (log10(clump_output_density(w)), char(9), &
+                        (log10(clump_output_density(w))), char(9), &
                         (clump_dens(w) * unit_density),char(9), &
                         xyzh(1,clump_pid(w)),char(9),  &
                         xyzh(2,clump_pid(w)),char(9),  &
