@@ -41,7 +41,8 @@ contains
     real, dimension(50) :: sink_flag_debug, clump_flag_debug
     real, dimension(50) :: distance2, distance2_sinks
 
-
+    write(*,*) 'DEV BRANCH COMPILED'
+    stop 0
     dyn_time_inner_disc =(10.0**1.5) * (3.15E7/5.023E6)
       IF (n_clumps == 0 .and. time > dyn_time_inner_disc) then
         DO i=1, npart
