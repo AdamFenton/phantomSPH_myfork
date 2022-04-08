@@ -28,6 +28,7 @@ contains
 
     CHARACTER(LEN=30) :: Format, clumps_and_sinks
     character(len=7) :: clump_info_file
+
     character(len=200) ::dumpfile_extension,clump_id, dumpfile_prefix,runid,particle_id, sub_file
     character(len=500) :: dumpfile, dumpfile_check,dumpfile_check_start
 
@@ -194,9 +195,15 @@ contains
 
 
           open(499,file=clump_info_file,position='append')
-          write(499,*) (clump_dens(w) * unit_density),",",&
-                     xyzh(1,clump_pid(w)),",",xyzh(2,clump_pid(w)),",",xyzh(3,clump_pid(w)),",",&
-                    vxyzu(1,clump_pid(w)),",",vxyzu(2,clump_pid(w)),",",vxyzu(3,clump_pid(w))
+          write(499,*)  time, char(9), &
+                        (log10(clump_output_density(w)), char(9), &
+                        (clump_dens(w) * unit_density),char(9), &
+                        xyzh(1,clump_pid(w)),char(9),  &
+                        xyzh(2,clump_pid(w)),char(9),  &
+                        xyzh(3,clump_pid(w)),char(9),  &
+                        vxyzu(1,clump_pid(w)),char(9), &
+                        vxyzu(2,clump_pid(w)),char(9), &
+                        vxyzu(3,clump_pid(w))
           close(499)
           new_exponent = (log10(clump_output_density(w)) + 1)
           clump_output_density(w) = 10.**new_exponent
