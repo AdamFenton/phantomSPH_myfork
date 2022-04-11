@@ -1,3 +1,7 @@
+#### DISCLAIMER:This is software developed by Daniel Price and availible from https://github.com/danieljprice/phantom/. I cloned and restarted git version control in my own repo because I messed up my fork of the original code. /src/main/specific_output.f90 is authored by me, the rest, besides some minor additions to tie my additions together, are from the original work by Daniel Price et al. 
+
+
+
 Phantom
 =======
 
