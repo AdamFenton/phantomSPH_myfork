@@ -34,7 +34,7 @@ subroutine evol(infile,logfile,evfile,dumpfile)
  use io,               only:iprint,iwritein,id,master,iverbose,&
                             flush_warnings,nprocs,fatal,warning
 
- use density,          only:specific_output, n_clumps, write_restart_file, read_restart_file, temp, nlines, clump_pid, &
+ use density,          only:specific_output, n_clumps, write_restart_file, read_restart_file, nlines, clump_pid, &
                             clump_output_density, assign_values_from_restart, n_clumps_in_restart, restart_file_read_counter
 
 
@@ -292,8 +292,9 @@ subroutine evol(infile,logfile,evfile,dumpfile)
 
     INQUIRE(FILE="restart_file", EXIST=file_exists)
     restart_run: IF (file_exists .and. restart_file_read_counter == 0) then
-                  open(2, file='restart_file')
-                  read(2,*,iostat=io) n_clumps_in_restart, time_in_restart_file
+                  open(1, file='restart_file')
+                  read(1,*,iostat=io) n_clumps_in_restart, time_in_restart_file
+
                   if (n_clumps_in_restart == 0) then
                     ! No clumps in file, running specific_output with zero arrays
                     call specific_output(-9,-4,100)
@@ -302,7 +303,10 @@ subroutine evol(infile,logfile,evfile,dumpfile)
                     restart_file_read_counter = 1
 
                     do
-                      read(2,*,iostat=io) clump_id,clump_particle_id,next_density
+                      open(1, file='restart_file')
+                      ! read(1,*,iostat=io) n_clumps_in_restart, time_in_restart_file
+                      read(1,*,iostat=io) clump_id,clump_particle_id,next_density
+
                       clump_pid(clump_id) = clump_particle_ID
                       clump_output_density(clump_id) = 10**next_density
                       IF (io/=0) EXIT
@@ -311,7 +315,7 @@ subroutine evol(infile,logfile,evfile,dumpfile)
                     call specific_output(-9,-4,100)
 
                   endif
-                  close(2)
+                  close(1)
                  ENDIF restart_run
 
                  ! If restart file has already been read
